@@ -34,7 +34,8 @@
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     const token = await messaging.getToken({
-                        vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA'
+                        vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
+                        serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
                     });
                     console.log('FCM Token:', token);
                     document.getElementById('token').textContent = token;
