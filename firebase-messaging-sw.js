@@ -23,10 +23,34 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/FirebasePWA-Test/icon-192x192.png'
+        icon: '/FirebasePWA-Test/icon-192x192.png',
+        // 將 data 資料傳遞給通知
+        data: payload.data
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// 處理通知點擊事件
+self.addEventListener('notificationclick', function(event) {
+    console.log('通知被點擊:', event);
+
+    // 關閉通知
+    event.notification.close();
+
+    // 取得通知中的資料
+    const data = event.notification.data;
+    
+    // 檢查是否有 URL 需要開啟
+    if (data && data.type === 'openUrl' && data.url) {
+        // 開啟指定的 URL
+        const urlToOpen = new URL(data.url).href;
+
+        // 使用 clients.openWindow() 開啟 URL
+        event.waitUntil(
+            clients.openWindow(urlToOpen)
+        );
+    }
 });
 
 // PWA 相關功能
