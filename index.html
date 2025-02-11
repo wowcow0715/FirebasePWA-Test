@@ -25,17 +25,35 @@
         // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
 
-        // 初始化 Firebase Messaging
+        // 初始化 Firebase Messaging 並設定 Service Worker
         const messaging = firebase.messaging();
+
+        // 註冊 Service Worker
+        async function registerServiceWorker() {
+            try {
+                const registration = await navigator.serviceWorker.register(
+                    '/FirebasePWA-Test/firebase-messaging-sw.js',
+                    { scope: '/FirebasePWA-Test/' }
+                );
+                console.log('Service Worker 註冊成功:', registration);
+                return registration;
+            } catch (error) {
+                console.error('Service Worker 註冊失敗:', error);
+                throw error;
+            }
+        }
 
         // 請求通知權限
         async function requestNotificationPermission() {
             try {
+                // 先註冊 Service Worker
+                const registration = await registerServiceWorker();
+
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     const token = await messaging.getToken({
                         vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
-                        serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
+                        serviceWorkerRegistration: registration
                     });
                     console.log('FCM Token:', token);
                     document.getElementById('token').textContent = token;
@@ -51,10 +69,15 @@
             const notificationTitle = payload.notification.title;
             const notificationOptions = {
                 body: payload.notification.body,
-                icon: '/icon-192x192.png'
+                icon: '/FirebasePWA-Test/icon-192x192.png'
             };
             new Notification(notificationTitle, notificationOptions);
         });
+
+        // 頁面載入時註冊 Service Worker
+        if ('serviceWorker' in navigator) {
+            registerServiceWorker().catch(console.error);
+        }
     </script>
 </head>
 <body>
