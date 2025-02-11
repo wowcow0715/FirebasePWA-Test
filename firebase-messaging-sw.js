@@ -1,88 +1,121 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Firebase 推播測試</title>
-    <link rel="manifest" href="manifest.json">
+// 引入 Firebase Messaging Service Worker
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+
+// 初始化 Firebase
+firebase.initializeApp({
+    apiKey: "AIzaSyAYVGDCxwf3WewHD9gMhWr_LmCxY94rjnU",
+    authDomain: "test-2ed10.firebaseapp.com",
+    projectId: "test-2ed10",
+    storageBucket: "test-2ed10.firebasestorage.app",
+    messagingSenderId: "450067672312",
+    appId: "1:450067672312:web:3acf400cdb748501f05f0d",
+    measurementId: "G-8WZ6D00R06"
+});
+
+// 初始化 Messaging
+const messaging = firebase.messaging();
+
+// 處理背景訊息
+messaging.onBackgroundMessage((payload) => {
+    console.log('收到背景訊息:', payload);
+    console.log('payload.data:', payload.data);  // 新增除錯資訊
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/FirebasePWA-Test/icon-192x192.png',
+        data: payload.data,  // 確保 data 正確傳遞
+        tag: 'notification-' + Date.now()  // 新增唯一標籤
+    };
 
-    <script>
-        // Firebase 設定
-        const firebaseConfig = {
-            apiKey: "AIzaSyAYVGDCxwf3WewHD9gMhWr_LmCxY94rjnU",
-            authDomain: "test-2ed10.firebaseapp.com", 
-            projectId: "test-2ed10",
-            storageBucket: "test-2ed10.firebasestorage.app",
-            messagingSenderId: "450067672312",
-            appId: "1:450067672312:web:3acf400cdb748501f05f0d",
-            measurementId: "G-8WZ6D00R06"
-        };
+    console.log('notificationOptions:', notificationOptions);  // 新增除錯資訊
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
 
-        // 初始化 Firebase
-        firebase.initializeApp(firebaseConfig);
+// 處理通知點擊事件
+self.addEventListener('notificationclick', function(event) {
+    console.log('通知被點擊:', event);
+    console.log('notification data:', event.notification.data);  // 新增除錯資訊
 
-        // 初始化 Firebase Messaging 並設定 Service Worker
-        const messaging = firebase.messaging();
+    // 關閉通知
+    event.notification.close();
 
-        // 註冊 Service Worker
-        async function registerServiceWorker() {
-            try {
-                const registration = await navigator.serviceWorker.register(
-                    '/FirebasePWA-Test/firebase-messaging-sw.js',
-                    { scope: '/FirebasePWA-Test/' }
-                );
-                console.log('Service Worker 註冊成功:', registration);
-                return registration;
-            } catch (error) {
-                console.error('Service Worker 註冊失敗:', error);
-                throw error;
-            }
-        }
+    // 取得通知中的資料
+    const data = event.notification.data;
+    console.log('解析後的 data:', data);  // 新增除錯資訊
+    
+    // 檢查是否有 URL 需要開啟
+    if (data && data.type === 'openUrl' && data.url) {
+        console.log('準備開啟 URL:', data.url);  // 新增除錯資訊
+        const urlToOpen = new URL(data.url).href;
+        console.log('格式化後的 URL:', urlToOpen);  // 新增除錯資訊
 
-        // 請求通知權限
-        async function requestNotificationPermission() {
-            try {
-                // 先註冊 Service Worker
-                const registration = await registerServiceWorker();
+        event.waitUntil(
+            // 先檢查是否有已開啟的視窗
+            clients.matchAll({
+                type: 'window',
+                includeUncontrolled: true
+            }).then(function(clientList) {
+                console.log('找到的視窗列表:', clientList);  // 新增除錯資訊
 
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await messaging.getToken({
-                        vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
-                        serviceWorkerRegistration: registration
-                    });
-                    console.log('FCM Token:', token);
-                    document.getElementById('token').textContent = token;
+                // 尋找已開啟的標籤頁
+                for (let client of clientList) {
+                    console.log('檢查視窗:', client.url);  // 新增除錯資訊
+                    if (client.url === urlToOpen && 'focus' in client) {
+                        console.log('找到相符的視窗，切換焦點');  // 新增除錯資訊
+                        return client.focus();
+                    }
                 }
-            } catch (error) {
-                console.error('取得權限失敗:', error);
-            }
-        }
+                
+                // 如果沒有找到已開啟的標籤頁，嘗試開啟新視窗
+                if (clients.openWindow) {
+                    console.log('嘗試開啟新視窗');  // 新增除錯資訊
+                    return clients.openWindow(urlToOpen).catch(error => {
+                        console.error('開啟視窗失敗:', error);
+                        // 如果無法開啟視窗，可以在這裡提供替代方案
+                    });
+                }
+                
+                console.log('此裝置不支援自動開啟視窗');
+            }).catch(error => {
+                console.error('處理視窗時發生錯誤:', error);  // 新增除錯資訊
+            })
+        );
+    } else {
+        console.log('通知中沒有有效的 URL 資訊');  // 新增除錯資訊
+        console.log('data.type:', data ? data.type : 'undefined');
+        console.log('data.url:', data ? data.url : 'undefined');
+    }
+});
 
-        // 處理前景訊息
-        messaging.onMessage((payload) => {
-            console.log('收到訊息:', payload);
-            const notificationTitle = payload.notification.title;
-            const notificationOptions = {
-                body: payload.notification.body,
-                icon: '/FirebasePWA-Test/icon-192x192.png'
-            };
-            new Notification(notificationTitle, notificationOptions);
-        });
+// PWA 相關功能
+const CACHE_NAME = 'push-demo-v1';
 
-        // 頁面載入時註冊 Service Worker
-        if ('serviceWorker' in navigator) {
-            registerServiceWorker().catch(console.error);
-        }
-    </script>
-</head>
-<body>
-    <h1>Firebase 推播測試</h1>
-    <button onclick="requestNotificationPermission()">請求通知權限</button>
-    <p>FCM Token: <span id="token"></span></p>
-</body>
-</html> 
+// 簡化快取策略
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request)
+            .catch(() => {
+                return caches.match(event.request);
+            })
+    );
+});
+
+// 安裝時不進行快取
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+// 啟動時清除舊的快取
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keyList) => {
+            return Promise.all(keyList.map((key) => {
+                if (key !== CACHE_NAME) {
+                    return caches.delete(key);
+                }
+            }));
+        })
+    );
+}); 
