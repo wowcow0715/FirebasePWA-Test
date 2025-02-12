@@ -1,6 +1,6 @@
 {
     "name": "Firebase 推播測試",
-    "short_name": "推播測試",
+    "short_name": "張仲瑋的祕密花園",
     "start_url": "/FirebasePWA-Test/",
     "display": "standalone",
     "background_color": "#ffffff",
