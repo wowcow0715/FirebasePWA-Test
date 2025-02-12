@@ -10,6 +10,25 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
+    <style>
+        /* 新增樣式 */
+        .copy-button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .token-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        #copySuccess {
+            color: green;
+            margin-left: 10px;
+            display: none;
+        }
+    </style>
+
     <script>
         // Firebase 設定
         const firebaseConfig = {
@@ -25,35 +44,40 @@
         // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
 
-        // 初始化 Firebase Messaging 並設定 Service Worker
+        // 初始化 Firebase Messaging
         const messaging = firebase.messaging();
 
-        // 註冊 Service Worker
-        async function registerServiceWorker() {
+        // 複製 Token 到剪貼簿
+        async function copyToken() {
+            const token = document.getElementById('token').textContent;
+            if (!token) {
+                alert('尚未取得 Token');
+                return;
+            }
+
             try {
-                const registration = await navigator.serviceWorker.register(
-                    '/FirebasePWA-Test/firebase-messaging-sw.js',
-                    { scope: '/FirebasePWA-Test/' }
-                );
-                console.log('Service Worker 註冊成功:', registration);
-                return registration;
-            } catch (error) {
-                console.error('Service Worker 註冊失敗:', error);
-                throw error;
+                await navigator.clipboard.writeText(token);
+                // 顯示複製成功訊息
+                const successMsg = document.getElementById('copySuccess');
+                successMsg.style.display = 'inline';
+                // 3秒後隱藏訊息
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+            } catch (err) {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動複製');
             }
         }
 
         // 請求通知權限
         async function requestNotificationPermission() {
             try {
-                // 先註冊 Service Worker
-                const registration = await registerServiceWorker();
-
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     const token = await messaging.getToken({
                         vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
-                        serviceWorkerRegistration: registration
+                        serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
                     });
                     console.log('FCM Token:', token);
                     document.getElementById('token').textContent = token;
@@ -73,16 +97,16 @@
             };
             new Notification(notificationTitle, notificationOptions);
         });
-
-        // 頁面載入時註冊 Service Worker
-        if ('serviceWorker' in navigator) {
-            registerServiceWorker().catch(console.error);
-        }
     </script>
 </head>
 <body>
     <h1>Firebase 推播測試</h1>
     <button onclick="requestNotificationPermission()">請求通知權限</button>
-    <p>FCM Token: <span id="token"></span></p>
+    <div class="token-container">
+        <span>FCM Token: </span>
+        <span id="token"></span>
+        <button class="copy-button" onclick="copyToken()">複製 Token</button>
+        <span id="copySuccess">複製成功！</span>
+    </div>
 </body>
 </html> 
