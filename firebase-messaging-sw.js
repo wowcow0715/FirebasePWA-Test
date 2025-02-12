@@ -19,73 +19,49 @@ const messaging = firebase.messaging();
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
-    console.log('payload.data:', payload.data);  // 新增除錯資訊
     
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/FirebasePWA-Test/icon-192x192.png',
-        data: payload.data,  // 確保 data 正確傳遞
-        tag: 'notification-' + Date.now()  // 新增唯一標籤
+        icon: 'https://raw.githubusercontent.com/wowcow0715/FirebasePWA-Test/refs/heads/main/icon-192x192.png',
+        data: {
+            url: payload.webpush.fcmOptions.link  // 儲存點擊後要開啟的URL
+        },
+        tag: 'notification-' + Date.now()
     };
 
-    console.log('notificationOptions:', notificationOptions);  // 新增除錯資訊
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
     console.log('通知被點擊:', event);
-    console.log('notification data:', event.notification.data);  // 新增除錯資訊
-
+    
     // 關閉通知
     event.notification.close();
 
-    // 取得通知中的資料
-    const data = event.notification.data;
-    console.log('解析後的 data:', data);  // 新增除錯資訊
+    // 取得要開啟的URL
+    const urlToOpen = event.notification.data.url;
     
-    // 檢查是否有 URL 需要開啟
-    if (data && data.type === 'openUrl' && data.url) {
-        console.log('準備開啟 URL:', data.url);  // 新增除錯資訊
-        const urlToOpen = new URL(data.url).href;
-        console.log('格式化後的 URL:', urlToOpen);  // 新增除錯資訊
-
+    if (urlToOpen) {
         event.waitUntil(
-            // 先檢查是否有已開啟的視窗
             clients.matchAll({
                 type: 'window',
                 includeUncontrolled: true
             }).then(function(clientList) {
-                console.log('找到的視窗列表:', clientList);  // 新增除錯資訊
-
                 // 尋找已開啟的標籤頁
                 for (let client of clientList) {
-                    console.log('檢查視窗:', client.url);  // 新增除錯資訊
                     if (client.url === urlToOpen && 'focus' in client) {
-                        console.log('找到相符的視窗，切換焦點');  // 新增除錯資訊
                         return client.focus();
                     }
                 }
                 
-                // 如果沒有找到已開啟的標籤頁，嘗試開啟新視窗
+                // 如果沒有找到已開啟的標籤頁,開啟新視窗
                 if (clients.openWindow) {
-                    console.log('嘗試開啟新視窗');  // 新增除錯資訊
-                    return clients.openWindow(urlToOpen).catch(error => {
-                        console.error('開啟視窗失敗:', error);
-                        // 如果無法開啟視窗，可以在這裡提供替代方案
-                    });
+                    return clients.openWindow(urlToOpen);
                 }
-                
-                console.log('此裝置不支援自動開啟視窗');
-            }).catch(error => {
-                console.error('處理視窗時發生錯誤:', error);  // 新增除錯資訊
             })
         );
-    } else {
-        console.log('通知中沒有有效的 URL 資訊');  // 新增除錯資訊
-        console.log('data.type:', data ? data.type : 'undefined');
-        console.log('data.url:', data ? data.url : 'undefined');
     }
 });
 
