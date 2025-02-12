@@ -72,31 +72,48 @@
 
         // 自動取得 Token
         async function getToken() {
+            console.log('開始取得 FCM Token...');
             try {
+                console.log('註冊 Service Worker...');
+                const registration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
+                    scope: '/FirebasePWA-Test/'
+                });
+                console.log('Service Worker 註冊成功:', registration);
+
+                // 使用 vapidKey 取得 Token，不檢查通知權限
                 const token = await messaging.getToken({
                     vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
-                    serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
+                    serviceWorkerRegistration: registration
                 });
-                console.log('FCM Token:', token);
+                
+                console.log('FCM Token 取得成功:', {
+                    token: token,
+                    tokenLength: token.length,
+                    timestamp: new Date().toISOString()
+                });
+                
                 document.getElementById('token').textContent = token;
             } catch (error) {
-                console.error('取得Token失敗:', error);
-                document.getElementById('token').textContent = error;
+                console.error('FCM Token 取得失敗:', {
+                    error: error,
+                    errorMessage: error.message,
+                    errorStack: error.stack,
+                    timestamp: new Date().toISOString()
+                });
+                document.getElementById('token').textContent = '取得 Token 失敗: ' + error.message;
             }
         }
 
         // 頁面載入時自動取得 Token
         window.addEventListener('load', getToken);
 
-        // 處理前景訊息
+        // 修改前景訊息處理，只記錄不顯示通知
         messaging.onMessage((payload) => {
             console.log('收到訊息:', payload);
-            const notificationTitle = payload.notification.title;
-            const notificationOptions = {
-                body: payload.notification.body,
-                icon: '/FirebasePWA-Test/icon-192x192.png'
-            };
-            new Notification(notificationTitle, notificationOptions);
+            // 不再建立通知，只處理數據
+            if (payload.data) {
+                console.log('收到數據:', payload.data);
+            }
         });
     </script>
 </head>
