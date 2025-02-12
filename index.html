@@ -70,22 +70,23 @@
             }
         }
 
-        // 請求通知權限
-        async function requestNotificationPermission() {
+        // 自動取得 Token
+        async function getToken() {
             try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await messaging.getToken({
-                        vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
-                        serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
-                    });
-                    console.log('FCM Token:', token);
-                    document.getElementById('token').textContent = token;
-                }
+                const token = await messaging.getToken({
+                    vapidKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA',
+                    serviceWorkerRegistration: await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js')
+                });
+                console.log('FCM Token:', token);
+                document.getElementById('token').textContent = token;
             } catch (error) {
-                console.error('取得權限失敗:', error);
+                console.error('取得Token失敗:', error);
+                document.getElementById('token').textContent = error;
             }
         }
+
+        // 頁面載入時自動取得 Token
+        window.addEventListener('load', getToken);
 
         // 處理前景訊息
         messaging.onMessage((payload) => {
@@ -101,7 +102,6 @@
 </head>
 <body>
     <h1>Firebase 推播測試</h1>
-    <button onclick="requestNotificationPermission()">請求通知權限</button>
     <div class="token-container">
         <span>FCM Token: </span>
         <span id="token"></span>
