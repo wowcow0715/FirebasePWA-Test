@@ -18,22 +18,57 @@ const messaging = firebase.messaging();
 
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
+    console.log('收到背景訊息:', payload);  // 保留這個日誌便於調試
+    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         data: {
-            url: payload.webpush?.fcmOptions?.link  // 儲存 URL
-        }
+            url: payload.webpush?.fcmOptions?.link
+        },
+        // 為 iOS 添加以下選項
+        badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
+        icon: '/FirebasePWA-Test/icon-192x192.png',   // iOS 需要
+        tag: 'notification-' + Date.now(),            // iOS 需要唯一標識
+        renotify: true,                               // iOS 每次都提示
+        requireInteraction: true                      // 保持通知直到用戶操作
     };
+
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
+    console.log('通知被點擊');  // 保留這個日誌便於調試
+    
     event.notification.close();
     const urlToOpen = event.notification.data?.url;
+    
     if (urlToOpen) {
-        event.waitUntil(clients.openWindow(urlToOpen));
+        // 特別處理 iOS
+        if (navigator.standalone || 
+            window.matchMedia('(display-mode: standalone)').matches) {
+            // PWA 模式
+            event.waitUntil(
+                Promise.all([
+                    clients.openWindow(urlToOpen),
+                    // 嘗試喚醒 PWA
+                    clients.matchAll({
+                        type: 'window',
+                        includeUncontrolled: true
+                    }).then((clientList) => {
+                        for (let client of clientList) {
+                            if (client.url && 'focus' in client) {
+                                return client.focus();
+                            }
+                        }
+                    })
+                ])
+            );
+        } else {
+            // 一般模式
+            event.waitUntil(clients.openWindow(urlToOpen));
+        }
     }
 });
 
@@ -50,20 +85,12 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
-// 安裝時不進行快取
+// 處理 PWA 安裝事件
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    self.skipWaiting();  // 立即激活新的 Service Worker
 });
 
-// 啟動時清除舊的快取
+// 處理 PWA 激活事件
 self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((keyList) => {
-            return Promise.all(keyList.map((key) => {
-                if (key !== CACHE_NAME) {
-                    return caches.delete(key);
-                }
-            }));
-        })
-    );
+    event.waitUntil(clients.claim());  // 立即接管所有頁面
 }); 
