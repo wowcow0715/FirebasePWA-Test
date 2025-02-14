@@ -47,18 +47,12 @@
                     successMsg.style.display = 'none';
                 }, 3000);
 
-                // 記錄成功複製事件
-                logEvent(analytics, 'token_copied', {
-                    success: true
-                });
+
             } catch (err) {
                 console.error('複製失敗:', err);
                 alert('複製失敗，請手動複製');
 
-                // 記錄複製失敗事件
-                logEvent(analytics, 'token_copy_error', {
-                    error_message: err.message
-                });
+
             }
         }
 
@@ -103,18 +97,11 @@
                 
                 document.getElementById('token').textContent = token;
 
-                logEvent(analytics, 'fcm_token_obtained', {
-                    success: true,
-                    token_length: token.length
-                });
             } catch (error) {
                 console.error('Token 取得失敗:', error);
                 document.getElementById('token').textContent = '取得 Token 失敗: ' + error.message;
 
-                logEvent(analytics, 'fcm_token_error', {
-                    error_message: error.message,
-                    error_code: error.code || 'unknown'
-                });
+
             }
         }
 
