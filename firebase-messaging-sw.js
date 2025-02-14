@@ -40,6 +40,7 @@ messaging.onBackgroundMessage((payload) => {
         data: {
             url: payload.fcmOptions?.link
         },
+        renotify: false,
         tag: isIOSPWA ? 'ios-pwa-notification' : 'push-notification',  // iOS PWA 使用特別的 tag
         badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
         icon: '/FirebasePWA-Test/icon-192x192.png'    // iOS 需要
