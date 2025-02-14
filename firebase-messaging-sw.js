@@ -31,9 +31,8 @@ messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
     
     // 檢查是否為 iOS PWA
-    const isIOSPWA = 
-        navigator.standalone || 
-        window.matchMedia('(display-mode: standalone)').matches;
+    const isIOSPWA = self.registration.scope.includes('ios-pwa') || 
+                     self.navigator?.standalone;
     
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
