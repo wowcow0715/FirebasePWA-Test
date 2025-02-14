@@ -7,48 +7,30 @@
     <link rel="manifest" href="manifest.json">
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
 
-    <style>
-        /* 新增樣式 */
-        .copy-button {
-            margin-left: 10px;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .token-container {
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
-        #copySuccess {
-            color: green;
-            margin-left: 10px;
-            display: none;
-        }
-    </style>
-
-    <script>
-        // Firebase 設定
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAYVGDCxwf3WewHD9gMhWr_LmCxY94rjnU",
-            authDomain: "test-2ed10.firebaseapp.com", 
-            projectId: "test-2ed10",
-            storageBucket: "test-2ed10.firebasestorage.app",
-            messagingSenderId: "450067672312",
-            appId: "1:450067672312:web:3acf400cdb748501f05f0d",
-            measurementId: "G-8WZ6D00R06"
+            apiKey: "AIzaSyDZklXfy-QFX2aFxveT-rubiSamhRLL3S4",
+            authDomain: "best777h5.firebaseapp.com",
+            projectId: "best777h5",
+            storageBucket: "best777h5.firebasestorage.app",
+            messagingSenderId: "129060872565",
+            appId: "1:129060872565:web:b81c63bd4a65c8eb73b33c",
+            measurementId: "G-49JKD0RD91"
         };
 
-        // 初始化 Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        // 初始化 Firebase Messaging
-        const messaging = firebase.messaging();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const messaging = getMessaging(app);
 
         // 複製 Token 到剪貼簿
-        async function copyToken() {
+        window.copyToken = async function() {
             const token = document.getElementById('token').textContent;
             if (!token) {
                 alert('尚未取得 Token');
@@ -64,40 +46,58 @@
                 setTimeout(() => {
                     successMsg.style.display = 'none';
                 }, 3000);
+
+                // 記錄成功複製事件
+                logEvent(analytics, 'token_copied', {
+                    success: true
+                });
             } catch (err) {
                 console.error('複製失敗:', err);
                 alert('複製失敗，請手動複製');
+
+                // 記錄複製失敗事件
+                logEvent(analytics, 'token_copy_error', {
+                    error_message: err.message
+                });
             }
         }
 
         // 自動取得 Token
-        async function getToken() {
+        async function requestToken() {
             console.log('開始取得 FCM Token...');
             try {
+                // 請求通知權限
+                const permission = await Notification.requestPermission();
+                console.log('通知權限狀態:', permission);
+                
+                if (permission !== 'granted') {
+                    throw new Error('需要通知權限才能取得Token');
+                }
+
                 console.log('註冊 Service Worker...');
                 const registration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
                     scope: '/FirebasePWA-Test/'
                 });
                 console.log('Service Worker 註冊成功:', registration);
 
-                // 直接使用 service worker registration 取得 push subscription
-                const subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: false,  // 嘗試繞過通知權限檢查
-                    applicationServerKey: 'BOpyDrJ40jf_n5gWt_9sIPsWHjy5OOsl69zfY1iQHOHEi0khcsvgT1r81_xhAnGdZo9gryowJQhhnS4WesI-teA'
+                const token = await getToken(messaging, {
+                    vapidKey: 'BJ19liz5V-TS-u0YGubW_zbueEg9qi0k0emBpnCFjBnFBk1vhGjClblqhlIAxZqe5JMF1IBAzmhOBUadsL9_RB8',
+                    serviceWorkerRegistration: registration
                 });
-
-                console.log('Push Subscription 取得成功:', subscription);
                 
-                // 將 subscription 轉換為 FCM token 格式
-                const token = btoa(JSON.stringify(subscription));
-                
-                console.log('Token 生成成功:', {
+                console.log('FCM Token 取得成功:', {
                     token: token,
                     tokenLength: token.length,
                     timestamp: new Date().toISOString()
                 });
                 
                 document.getElementById('token').textContent = token;
+
+                // 記錄 Token 取得成功事件
+                logEvent(analytics, 'fcm_token_obtained', {
+                    success: true,
+                    token_length: token.length
+                });
             } catch (error) {
                 console.error('Token 取得失敗:', {
                     error: error,
@@ -106,21 +106,68 @@
                     timestamp: new Date().toISOString()
                 });
                 document.getElementById('token').textContent = '取得 Token 失敗: ' + error.message;
+
+                // 記錄錯誤事件
+                logEvent(analytics, 'fcm_token_error', {
+                    error_message: error.message,
+                    error_code: error.code || 'unknown'
+                });
             }
         }
 
-        // 頁面載入時自動取得 Token
-        window.addEventListener('load', getToken);
+        // 頁面載入時執行
+        window.addEventListener('load', () => {
+            requestToken();
+        });
 
         // 修改前景訊息處理，只記錄不顯示通知
-        messaging.onMessage((payload) => {
+        onMessage(messaging, (payload) => {
             console.log('收到訊息:', payload);
-            // 不再建立通知，只處理數據
+            
+            // 記錄前景推播接收
+            logEvent(analytics, 'foreground_push_received', {
+                title: payload.notification?.title || 'no_title',
+                body: payload.notification?.body || 'no_body',
+                has_data: !!payload.data,
+                timestamp: new Date().toISOString(),
+                message_type: payload.data ? 'data' : 'notification'
+            });
+            
             if (payload.data) {
                 console.log('收到數據:', payload.data);
+                // 記錄數據類型推播
+                logEvent(analytics, 'push_data_received', {
+                    data_type: payload.data.type || 'unknown',
+                    has_url: !!payload.data.url,
+                    timestamp: new Date().toISOString()
+                });
             }
         });
     </script>
+
+    <style>
+        .container {
+            margin: 20px;
+        }
+        .token-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+            gap: 10px;
+        }
+        .token-input {
+            min-width: 300px;
+            padding: 5px;
+        }
+        .button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #copySuccess {
+            color: green;
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <h1>Firebase 推播測試</h1>

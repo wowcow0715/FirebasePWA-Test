@@ -1,24 +1,37 @@
 // 引入 Firebase Messaging Service Worker
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
+importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
+importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js");
+importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js");
 
 // 初始化 Firebase
 firebase.initializeApp({
-    apiKey: "AIzaSyAYVGDCxwf3WewHD9gMhWr_LmCxY94rjnU",
-    authDomain: "test-2ed10.firebaseapp.com",
-    projectId: "test-2ed10",
-    storageBucket: "test-2ed10.firebasestorage.app",
-    messagingSenderId: "450067672312",
-    appId: "1:450067672312:web:3acf400cdb748501f05f0d",
-    measurementId: "G-8WZ6D00R06"
+    apiKey: "AIzaSyDZklXfy-QFX2aFxveT-rubiSamhRLL3S4",
+    authDomain: "best777h5.firebaseapp.com",
+    projectId: "best777h5",
+    storageBucket: "best777h5.firebasestorage.app",
+    messagingSenderId: "129060872565",
+    appId: "1:129060872565:web:b81c63bd4a65c8eb73b33c",
+    measurementId: "G-49JKD0RD91"
 });
 
 // 初始化 Messaging
 const messaging = firebase.messaging();
 
+// 初始化 Analytics
+const analytics = firebase.analytics();
+
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
+    
+    // 記錄背景推播接收
+    analytics.logEvent('background_push_received', {
+        title: payload.notification?.title || 'no_title',
+        body: payload.notification?.body || 'no_body',
+        has_data: !!payload.data,
+        timestamp: new Date().toISOString(),
+        message_type: payload.data ? 'data' : 'notification'
+    });
     
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
@@ -37,6 +50,15 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', function(event) {
     console.log('通知被點擊:', event);
     
+    // 記錄通知點擊
+    analytics.logEvent('push_notification_clicked', {
+        title: event.notification.title,
+        body: event.notification.body,
+        tag: event.notification.tag,
+        timestamp: new Date().toISOString(),
+        has_url: !!event.notification.data?.url
+    });
+    
     // 關閉通知
     event.notification.close();
 
@@ -44,22 +66,19 @@ self.addEventListener('notificationclick', function(event) {
     const urlToOpen = event.notification.data.url;
     
     if (urlToOpen) {
+        // 記錄 URL 開啟
+        analytics.logEvent('push_url_opened', {
+            url: urlToOpen,
+            timestamp: new Date().toISOString()
+        });
+
         event.waitUntil(
             clients.matchAll({
                 type: 'window',
                 includeUncontrolled: true
             }).then(function(clientList) {
-                // 尋找已開啟的標籤頁
-                for (let client of clientList) {
-                    if (client.url === urlToOpen && 'focus' in client) {
-                        return client.focus();
-                    }
-                }
-                
                 // 如果沒有找到已開啟的標籤頁,開啟新視窗
-                if (clients.openWindow) {
                     return clients.openWindow(urlToOpen);
-                }
             })
         );
     }
