@@ -1,7 +1,6 @@
 // 引入 Firebase Messaging Service Worker
-importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js");
-importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js");
-importScripts("https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js");
+importScripts('https://www.gstatic.com/firebasejs/11.3.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging-compat.js');
 
 // 初始化 Firebase
 firebase.initializeApp({
@@ -17,21 +16,9 @@ firebase.initializeApp({
 // 初始化 Messaging
 const messaging = firebase.messaging();
 
-// 初始化 Analytics
-const analytics = firebase.analytics();
-
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
-    
-    // 記錄背景推播接收
-    analytics.logEvent('background_push_received', {
-        title: payload.notification?.title || 'no_title',
-        body: payload.notification?.body || 'no_body',
-        has_data: !!payload.data,
-        timestamp: new Date().toISOString(),
-        message_type: payload.data ? 'data' : 'notification'
-    });
     
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
@@ -50,15 +37,6 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', function(event) {
     console.log('通知被點擊:', event);
     
-    // 記錄通知點擊
-    analytics.logEvent('push_notification_clicked', {
-        title: event.notification.title,
-        body: event.notification.body,
-        tag: event.notification.tag,
-        timestamp: new Date().toISOString(),
-        has_url: !!event.notification.data?.url
-    });
-    
     // 關閉通知
     event.notification.close();
 
@@ -66,19 +44,13 @@ self.addEventListener('notificationclick', function(event) {
     const urlToOpen = event.notification.data.url;
     
     if (urlToOpen) {
-        // 記錄 URL 開啟
-        analytics.logEvent('push_url_opened', {
-            url: urlToOpen,
-            timestamp: new Date().toISOString()
-        });
-
         event.waitUntil(
             clients.matchAll({
                 type: 'window',
                 includeUncontrolled: true
             }).then(function(clientList) {
-                // 如果沒有找到已開啟的標籤頁,開啟新視窗
-                    return clients.openWindow(urlToOpen);
+                // 直接開啟新視窗
+                return clients.openWindow(urlToOpen);
             })
         );
     }
