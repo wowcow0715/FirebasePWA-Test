@@ -126,19 +126,32 @@
         onMessage(messaging, (payload) => {
             console.log('收到前景訊息:', payload);
             
-            // 在前景也顯示通知
+            // 檢查是否為 iOS PWA
+            const isIOSPWA = 
+                navigator.standalone || 
+                window.matchMedia('(display-mode: standalone)').matches;
+            
+            // 如果是 iOS PWA，不在前景顯示通知
+            if (isIOSPWA) {
+                console.log('iOS PWA 前景，不顯示通知');
+                return Promise.resolve();
+            }
+            
+            // 其他情況顯示通知
             const notificationTitle = payload.notification.title;
             const notificationOptions = {
                 body: payload.notification.body,
                 data: {
                     url: payload.fcmOptions?.link
                 },
-                tag: 'push-notification',  // 使用相同的 tag
-                renotify: false  // 不重複提示
+                tag: 'push-notification',
+                renotify: false,
+                badge: '/FirebasePWA-Test/icon-192x192.png',
+                icon: '/FirebasePWA-Test/icon-192x192.png'
             };
             
             // 使用 ServiceWorker 註冊來顯示通知
-            swRegistration.showNotification(notificationTitle, notificationOptions);
+            return swRegistration.showNotification(notificationTitle, notificationOptions);
         });
 
         // 檢查iOS版本

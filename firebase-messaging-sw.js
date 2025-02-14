@@ -30,14 +30,21 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
     
+    // 檢查是否為 iOS PWA
+    const isIOSPWA = 
+        navigator.standalone || 
+        window.matchMedia('(display-mode: standalone)').matches;
+    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         data: {
             url: payload.fcmOptions?.link
         },
-        tag: 'push-notification',  // 使用固定 tag，相同 tag 的通知會被覆蓋
-        renotify: false  // 不重複提示
+        tag: isIOSPWA ? 'ios-pwa-notification' : 'push-notification',  // iOS PWA 使用特別的 tag
+        renotify: false,  // 不重複提示
+        badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
+        icon: '/FirebasePWA-Test/icon-192x192.png'    // iOS 需要
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
