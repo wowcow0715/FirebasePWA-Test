@@ -30,18 +30,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
     
-    // 檢查平台類型
-    const platform = getPlatformType();
-    
-    // 根據平台取得對應的 URL
-    const urlToOpen = getUrlByPlatform(payload, platform);
-    
-    const notificationTitle = payload.notification.title+'背景';
+
+    const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         data: {
-            url: urlToOpen,
-            platform: platform
+            url: payload.fcmOptions?.link,
         },
         tag: 'push-notification',
         badge: '/FirebasePWA-Test/icon-192x192.png',
@@ -55,63 +49,15 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', function(event) {
     console.log('收到通知點擊事件:', event);
     
-    // 從通知數據中取得 URL 和平台資訊
-    const platform = event.notification.data?.platform;
+    // 從通知數據中取得 URL 
     const urlToOpen = event.notification.data?.url;
-    
     if (urlToOpen) {
         event.notification.close();
+        event.waitUntil(clients.openWindow(urlToOpen));
         
-        // 根據平台處理點擊事件
-        switch(platform) {
-            case 'android':
-                // Android 特定處理
-                event.waitUntil(clients.openWindow(urlToOpen));
-                break;
-                
-            case 'ios':
-                // iOS 特定處理
-                event.waitUntil(
-                    Promise.all([
-                        clients.openWindow(urlToOpen),
-                        // 可能需要其他 iOS 特定操作
-                    ])
-                );
-                break;
-                
-            default:
-                // Web 預設處理
-                event.waitUntil(clients.openWindow(urlToOpen));
-        }
     }
 });
 
-// 輔助函數：取得平台類型
-function getPlatformType() {
-    const userAgent = self.navigator.userAgent.toLowerCase();
-    if (/android/i.test(userAgent)) {
-        return 'android';
-    } else if (/iphone|ipad|ipod/i.test(userAgent)) {
-        return 'ios';
-    }
-    return 'web';
-}
-
-// 輔助函數：根據平台取得 URL
-function getUrlByPlatform(payload, platform) {
-    switch(platform) {
-        case 'android':
-            return payload.android?.notification?.clickAction || 
-                   payload.fcmOptions?.link;
-            
-        case 'ios':
-            return payload.apns?.fcmOptions?.link || 
-                   payload.fcmOptions?.link;
-            
-        default:
-            return payload.fcmOptions?.link;
-    }
-}
 
 // PWA 快取功能
 self.addEventListener('fetch', (event) => {

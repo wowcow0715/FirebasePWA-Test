@@ -5,30 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Firebase 推播測試</title>
     <link rel="manifest" href="manifest.json">
-    
     <!-- Firebase SDK -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
-        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-analytics.js";
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDZklXfy-QFX2aFxveT-rubiSamhRLL3S4",
-            authDomain: "best777h5.firebaseapp.com",
-            projectId: "best777h5",
-            storageBucket: "best777h5.firebasestorage.app",
-            messagingSenderId: "129060872565",
-            appId: "1:129060872565:web:b81c63bd4a65c8eb73b33c",
-            measurementId: "G-49JKD0RD91"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const messaging = getMessaging(app);
-
         // 複製 Token 到剪貼簿
         window.copyToken = async function() {
             const token = document.getElementById('token').textContent;
@@ -122,43 +100,7 @@
         window.requestToken = requestToken;
         window.checkNotificationPermission = checkNotificationPermission;
 
-        // // 修改前景訊息處理
-        // onMessage(messaging, (payload) => {
-        //     console.log('收到前景訊息:', payload);
-            
-        //     // 檢查是否為 iOS PWA
-        //     const isIOSPWA = 
-        //         navigator.standalone || 
-        //         window.matchMedia('(display-mode: standalone)').matches;
-            
-        //     // 如果是 iOS PWA，不在前景顯示通知
-        //     if (isIOSPWA) {
-        //         console.log('iOS PWA 前景，不顯示通知');
-        //         return Promise.resolve();
-        //     }
-            
-        //     // 其他情況顯示通知
-        //     const notificationTitle = payload.notification.title+'前景';
-        //     const notificationOptions = {
-        //         body: payload.notification.body,
-        //         data: {
-        //             url: payload.fcmOptions?.link
-        //         },
-        //         renotify: false,
-        //         tag: 'push-notification',
-        //         badge: '/FirebasePWA-Test/icon-192x192.png',
-        //         icon: '/FirebasePWA-Test/icon-192x192.png'
-        //     };
-            
-        //     // 使用 ServiceWorker 註冊來顯示通知
-        //     return swRegistration.showNotification(notificationTitle, notificationOptions);
-        // });
 
-        // 檢查iOS版本
-        function checkIOSVersion() {
-            const match = navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
-            return match ? parseFloat(match[1] + '.' + match[2]) : false;
-        }
 
         // 錯誤處理
         window.addEventListener('error', (event) => {
