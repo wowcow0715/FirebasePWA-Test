@@ -2,6 +2,16 @@
 importScripts('https://www.gstatic.com/firebasejs/11.3.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.3.1/firebase-messaging-compat.js');
 
+// 快取設定
+const CACHE_NAME = 'push-demo-v1';
+const FILES_TO_CACHE = [
+    '/FirebasePWA-Test/',
+    '/FirebasePWA-Test/index.html',
+    '/FirebasePWA-Test/manifest.json',
+    '/FirebasePWA-Test/icon-192x192.png',
+    '/FirebasePWA-Test/icon-512x512.png'
+];
+
 // 初始化 Firebase
 firebase.initializeApp({
     apiKey: "AIzaSyDZklXfy-QFX2aFxveT-rubiSamhRLL3S4",
@@ -28,6 +38,9 @@ messaging.onBackgroundMessage((payload) => {
         // 為 iOS 添加以下選項
         badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
         icon: '/FirebasePWA-Test/icon-192x192.png',   // iOS 需要
+        tag: 'notification-' + Date.now(),            // iOS 需要唯一標識
+        renotify: true,                               // iOS 每次都提示
+        requireInteraction: true                      // 保持通知直到用戶操作
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
@@ -43,15 +56,12 @@ self.addEventListener('notificationclick', function(event) {
     }
 });
 
-// PWA 相關功能
-const CACHE_NAME = 'push-demo-v1';
-
-// 簡化快取策略
+// PWA 快取功能
 self.addEventListener('fetch', (event) => {
     event.respondWith(
-        fetch(event.request)
-            .catch(() => {
-                return caches.match(event.request);
+        caches.match(event.request)
+            .then((response) => {
+                return response || fetch(event.request);
             })
     );
 });
