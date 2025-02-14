@@ -28,19 +28,16 @@ const messaging = firebase.messaging();
 
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
-    console.log('收到背景訊息:', payload);  // 保留這個日誌便於調試
+    console.log('收到背景訊息:', payload);
+    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         data: {
             url: payload.fcmOptions?.link
         },
-        // 為 iOS 添加以下選項
-        badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
-        icon: '/FirebasePWA-Test/icon-192x192.png',   // iOS 需要
-        tag: 'notification-' + Date.now(),            // iOS 需要唯一標識
-        renotify: true,                               // iOS 每次都提示
-        requireInteraction: true                      // 保持通知直到用戶操作
+        tag: 'push-notification',  // 使用固定 tag，相同 tag 的通知會被覆蓋
+        renotify: false  // 不重複提示
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
@@ -51,7 +48,6 @@ self.addEventListener('notificationclick', function(event) {
     const urlToOpen = event.notification.data?.url;
     if (urlToOpen) {
         event.notification.close();
-        // 開啟指定的 URL
         event.waitUntil(clients.openWindow(urlToOpen));
     }
 });

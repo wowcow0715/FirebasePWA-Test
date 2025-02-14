@@ -82,11 +82,12 @@
         let swRegistration = null;
         async function requestToken() {
             try {
-                // 如果已經註冊過，就使用現有的
+                // 確保只註冊一次
                 if (!swRegistration) {
-                    swRegistration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
-                        scope: '/FirebasePWA-Test/'
-                    });
+                    swRegistration = await navigator.serviceWorker.register(
+                        '/FirebasePWA-Test/firebase-messaging-sw.js',
+                        { scope: '/FirebasePWA-Test/' }
+                    );
                 }
                 
                 const token = await getToken(messaging, {
@@ -121,28 +122,23 @@
         window.requestToken = requestToken;
         window.checkNotificationPermission = checkNotificationPermission;
 
-        // 修改前景訊息處理，只記錄不顯示通知
+        // 修改前景訊息處理
         onMessage(messaging, (payload) => {
-            console.log('收到訊息:', payload);
+            console.log('收到前景訊息:', payload);
             
-            // 記錄前景推播接收
-            logEvent(analytics, 'foreground_push_received', {
-                title: payload.notification?.title || 'no_title',
-                body: payload.notification?.body || 'no_body',
-                has_data: !!payload.data,
-                timestamp: new Date().toISOString(),
-                message_type: payload.data ? 'data' : 'notification'
-            });
+            // 在前景也顯示通知
+            const notificationTitle = payload.notification.title;
+            const notificationOptions = {
+                body: payload.notification.body,
+                data: {
+                    url: payload.fcmOptions?.link
+                },
+                tag: 'push-notification',  // 使用相同的 tag
+                renotify: false  // 不重複提示
+            };
             
-            if (payload.data) {
-                console.log('收到數據:', payload.data);
-                // 記錄數據類型推播
-                logEvent(analytics, 'push_data_received', {
-                    data_type: payload.data.type || 'unknown',
-                    has_url: !!payload.data.url,
-                    timestamp: new Date().toISOString()
-                });
-            }
+            // 使用 ServiceWorker 註冊來顯示通知
+            swRegistration.showNotification(notificationTitle, notificationOptions);
         });
 
         // 檢查iOS版本
