@@ -78,19 +78,20 @@
             }
         }
 
-        // 修改 requestToken 函數，移除權限請求部分
+        // 確保只註冊一次
+        let swRegistration = null;
         async function requestToken() {
-            console.log('開始取得 FCM Token...');
             try {
-                console.log('註冊 Service Worker...');
-                const registration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
-                    scope: '/FirebasePWA-Test/'
-                });
-                console.log('Service Worker 註冊成功:', registration);
-
+                // 如果已經註冊過，就使用現有的
+                if (!swRegistration) {
+                    swRegistration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
+                        scope: '/FirebasePWA-Test/'
+                    });
+                }
+                
                 const token = await getToken(messaging, {
                     vapidKey: 'BJ19liz5V-TS-u0YGubW_zbueEg9qi0k0emBpnCFjBnFBk1vhGjClblqhlIAxZqe5JMF1IBAzmhOBUadsL9_RB8',
-                    serviceWorkerRegistration: registration
+                    serviceWorkerRegistration: swRegistration
                 });
                 
                 console.log('FCM Token 取得成功:', {
