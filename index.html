@@ -122,37 +122,37 @@
         window.requestToken = requestToken;
         window.checkNotificationPermission = checkNotificationPermission;
 
-        // 修改前景訊息處理
-        onMessage(messaging, (payload) => {
-            console.log('收到前景訊息:', payload);
+        // // 修改前景訊息處理
+        // onMessage(messaging, (payload) => {
+        //     console.log('收到前景訊息:', payload);
             
-            // 檢查是否為 iOS PWA
-            const isIOSPWA = 
-                navigator.standalone || 
-                window.matchMedia('(display-mode: standalone)').matches;
+        //     // 檢查是否為 iOS PWA
+        //     const isIOSPWA = 
+        //         navigator.standalone || 
+        //         window.matchMedia('(display-mode: standalone)').matches;
             
-            // 如果是 iOS PWA，不在前景顯示通知
-            if (isIOSPWA) {
-                console.log('iOS PWA 前景，不顯示通知');
-                return Promise.resolve();
-            }
+        //     // 如果是 iOS PWA，不在前景顯示通知
+        //     if (isIOSPWA) {
+        //         console.log('iOS PWA 前景，不顯示通知');
+        //         return Promise.resolve();
+        //     }
             
-            // 其他情況顯示通知
-            const notificationTitle = payload.notification.title+'前景';
-            const notificationOptions = {
-                body: payload.notification.body,
-                data: {
-                    url: payload.fcmOptions?.link
-                },
-                renotify: false,
-                tag: 'push-notification',
-                badge: '/FirebasePWA-Test/icon-192x192.png',
-                icon: '/FirebasePWA-Test/icon-192x192.png'
-            };
+        //     // 其他情況顯示通知
+        //     const notificationTitle = payload.notification.title+'前景';
+        //     const notificationOptions = {
+        //         body: payload.notification.body,
+        //         data: {
+        //             url: payload.fcmOptions?.link
+        //         },
+        //         renotify: false,
+        //         tag: 'push-notification',
+        //         badge: '/FirebasePWA-Test/icon-192x192.png',
+        //         icon: '/FirebasePWA-Test/icon-192x192.png'
+        //     };
             
-            // 使用 ServiceWorker 註冊來顯示通知
-            return swRegistration.showNotification(notificationTitle, notificationOptions);
-        });
+        //     // 使用 ServiceWorker 註冊來顯示通知
+        //     return swRegistration.showNotification(notificationTitle, notificationOptions);
+        // });
 
         // 檢查iOS版本
         function checkIOSVersion() {
