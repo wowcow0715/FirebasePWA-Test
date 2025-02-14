@@ -36,7 +36,7 @@ messaging.onBackgroundMessage((payload) => {
     // 根據平台取得對應的 URL
     const urlToOpen = getUrlByPlatform(payload, platform);
     
-    const notificationTitle = payload.notification.title;
+    const notificationTitle = payload.notification.title+'背景';
     const notificationOptions = {
         body: payload.notification.body,
         data: {
