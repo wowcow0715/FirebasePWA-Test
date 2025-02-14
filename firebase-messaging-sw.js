@@ -18,41 +18,22 @@ const messaging = firebase.messaging();
 
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
-    console.log('收到背景訊息:', payload);
-    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
-        icon: 'https://raw.githubusercontent.com/wowcow0715/FirebasePWA-Test/refs/heads/main/icon-192x192.png',
         data: {
-            url: payload.webpush.fcmOptions.link  // 儲存點擊後要開啟的URL
-        },
-        tag: 'notification-' + Date.now()
+            url: payload.webpush?.fcmOptions?.link  // 儲存 URL
+        }
     };
-
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
-    console.log('通知被點擊:', event);
-    
-    // 關閉通知
     event.notification.close();
-
-    // 取得要開啟的URL
-    const urlToOpen = event.notification.data.url;
-    
+    const urlToOpen = event.notification.data?.url;
     if (urlToOpen) {
-        event.waitUntil(
-            clients.matchAll({
-                type: 'window',
-                includeUncontrolled: true
-            }).then(function(clientList) {
-                // 直接開啟新視窗
-                return clients.openWindow(urlToOpen);
-            })
-        );
+        event.waitUntil(clients.openWindow(urlToOpen));
     }
 });
 
