@@ -19,7 +19,6 @@ const messaging = firebase.messaging();
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);  // 保留這個日誌便於調試
-    
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
@@ -40,35 +39,13 @@ messaging.onBackgroundMessage((payload) => {
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
     console.log('通知被點擊');  // 保留這個日誌便於調試
-    
+    console.log('event',event);
     event.notification.close();
     const urlToOpen = event.notification.data?.url;
-    
+    console.log('urlToOpen',urlToOpen);
     if (urlToOpen) {
-        // 特別處理 iOS
-        if (navigator.standalone || 
-            window.matchMedia('(display-mode: standalone)').matches) {
-            // PWA 模式
-            event.waitUntil(
-                Promise.all([
-                    clients.openWindow(urlToOpen),
-                    // 嘗試喚醒 PWA
-                    clients.matchAll({
-                        type: 'window',
-                        includeUncontrolled: true
-                    }).then((clientList) => {
-                        for (let client of clientList) {
-                            if (client.url && 'focus' in client) {
-                                return client.focus();
-                            }
-                        }
-                    })
-                ])
-            );
-        } else {
-            // 一般模式
-            event.waitUntil(clients.openWindow(urlToOpen));
-        }
+        // 開啟指定的 URL
+        event.waitUntil(clients.openWindow(urlToOpen));
     }
 });
 
