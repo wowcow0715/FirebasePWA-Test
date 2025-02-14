@@ -23,7 +23,7 @@ messaging.onBackgroundMessage((payload) => {
     const notificationOptions = {
         body: payload.notification.body,
         data: {
-            url: payload.webpush?.fcmOptions?.link
+            url: payload.fcmOptions?.link
         },
         // 為 iOS 添加以下選項
         badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
@@ -38,12 +38,9 @@ messaging.onBackgroundMessage((payload) => {
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
-    console.log('通知被點擊');  // 保留這個日誌便於調試
-    console.log('event',event);
-    event.notification.close();
     const urlToOpen = event.notification.data?.url;
-    console.log('urlToOpen',urlToOpen);
     if (urlToOpen) {
+        event.notification.close();
         // 開啟指定的 URL
         event.waitUntil(clients.openWindow(urlToOpen));
     }
