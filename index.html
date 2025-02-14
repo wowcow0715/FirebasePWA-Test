@@ -143,6 +143,26 @@
                 });
             }
         });
+
+        // 檢查iOS版本
+        function checkIOSVersion() {
+            const match = navigator.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+            return match ? parseFloat(match[1] + '.' + match[2]) : false;
+        }
+
+        // 處理權限變更
+        Notification.requestPermission().then(permission => {
+            if (permission === 'denied') {
+                // 提供替代方案或指引
+                showNotificationSettings();
+            }
+        });
+
+        // 錯誤處理
+        window.addEventListener('error', (event) => {
+            console.error('PWA錯誤:', event.error);
+            // 實作適當的錯誤處理邏輯
+        });
     </script>
 
     <style>
