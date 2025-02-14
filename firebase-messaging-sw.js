@@ -28,9 +28,6 @@ messaging.onBackgroundMessage((payload) => {
         // 為 iOS 添加以下選項
         badge: '/FirebasePWA-Test/icon-192x192.png',  // iOS 需要
         icon: '/FirebasePWA-Test/icon-192x192.png',   // iOS 需要
-        tag: 'notification-' + Date.now(),            // iOS 需要唯一標識
-        renotify: true,                               // iOS 每次都提示
-        requireInteraction: true                      // 保持通知直到用戶操作
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
