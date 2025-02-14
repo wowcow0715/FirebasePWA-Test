@@ -62,18 +62,26 @@
             }
         }
 
-        // 自動取得 Token
+        // 檢查通知權限
+        async function checkNotificationPermission() {
+            const permission = await Notification.requestPermission();
+            console.log('目前通知權限狀態:', permission);
+            
+            // 更新權限狀態顯示
+            document.getElementById('permissionStatus').textContent = `通知權限: ${permission}`;
+            
+            if (permission === 'granted') {
+                // 如果同意了，就取得 Token
+                requestToken();
+            } else if (permission === 'denied') {
+                document.getElementById('token').textContent = '需要通知權限才能取得 Token';
+            }
+        }
+
+        // 修改 requestToken 函數，移除權限請求部分
         async function requestToken() {
             console.log('開始取得 FCM Token...');
             try {
-                // 請求通知權限
-                const permission = await Notification.requestPermission();
-                console.log('通知權限狀態:', permission);
-                
-                if (permission !== 'granted') {
-                    throw new Error('需要通知權限才能取得Token');
-                }
-
                 console.log('註冊 Service Worker...');
                 const registration = await navigator.serviceWorker.register('/FirebasePWA-Test/firebase-messaging-sw.js', {
                     scope: '/FirebasePWA-Test/'
@@ -93,21 +101,14 @@
                 
                 document.getElementById('token').textContent = token;
 
-                // 記錄 Token 取得成功事件
                 logEvent(analytics, 'fcm_token_obtained', {
                     success: true,
                     token_length: token.length
                 });
             } catch (error) {
-                console.error('Token 取得失敗:', {
-                    error: error,
-                    errorMessage: error.message,
-                    errorStack: error.stack,
-                    timestamp: new Date().toISOString()
-                });
+                console.error('Token 取得失敗:', error);
                 document.getElementById('token').textContent = '取得 Token 失敗: ' + error.message;
 
-                // 記錄錯誤事件
                 logEvent(analytics, 'fcm_token_error', {
                     error_message: error.message,
                     error_code: error.code || 'unknown'
@@ -115,10 +116,9 @@
             }
         }
 
-        // 頁面載入時執行
-        window.addEventListener('load', () => {
-            requestToken();
-        });
+        // 將 requestToken 和 checkNotificationPermission 加到 window 物件
+        window.requestToken = requestToken;
+        window.checkNotificationPermission = checkNotificationPermission;
 
         // 修改前景訊息處理，只記錄不顯示通知
         onMessage(messaging, (payload) => {
@@ -150,14 +150,6 @@
             return match ? parseFloat(match[1] + '.' + match[2]) : false;
         }
 
-        // 處理權限變更
-        Notification.requestPermission().then(permission => {
-            if (permission === 'denied') {
-                // 提供替代方案或指引
-                showNotificationSettings();
-            }
-        });
-
         // 錯誤處理
         window.addEventListener('error', (event) => {
             console.error('PWA錯誤:', event.error);
@@ -187,10 +179,26 @@
             color: green;
             display: none;
         }
+        .button-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .permission-status {
+            margin-top: 10px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <h1>Firebase 推播測試</h1>
+    <div class="button-container">
+        <button onclick="checkNotificationPermission()">請求通知權限</button>
+        <button onclick="requestToken()" id="getTokenBtn">重新取得 Token</button>
+    </div>
+    <div class="permission-status">
+        <span id="permissionStatus">通知權限: 未請求</span>
+    </div>
     <div class="token-container">
         <span>FCM Token: </span>
         <span id="token"></span>
