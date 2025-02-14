@@ -51,6 +51,7 @@ messaging.onBackgroundMessage((payload) => {
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
+    console.log('收到通知點擊事件:', event);
     const urlToOpen = event.notification.data?.url;
     if (urlToOpen) {
         event.notification.close();
