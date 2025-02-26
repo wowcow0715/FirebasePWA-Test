@@ -29,8 +29,6 @@ const messaging = firebase.messaging();
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
-    
-
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
