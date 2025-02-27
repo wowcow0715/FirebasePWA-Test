@@ -26,36 +26,36 @@ firebase.initializeApp({
 // 初始化 Messaging
 const messaging = firebase.messaging();
 
-// // 處理背景訊息
-// messaging.onBackgroundMessage((payload) => {
-//     console.log('收到背景訊息:', payload);
+// 處理背景訊息
+messaging.onBackgroundMessage((payload) => {
+    console.log('收到背景訊息:', payload);
     
-//     // 只處理含有 url 的推播
-//     if (!payload.data?.url) {
-//         console.log('忽略沒有 URL 的推播');
-//         return;
-//     }
+    // 只處理含有 url 的推播
+    if (!payload.data?.url) {
+        console.log('忽略沒有 URL 的推播');
+        return;
+    }
 
-//     const notificationTitle = payload.notification.title;
-//     const notificationOptions = {
-//         body: payload.notification.body,
-//         data: {
-//             url: payload.data.url
-//         },
-//         tag: 'push-notification',  // 使用固定 tag 避免重複
-//         renotify: false,  // 避免重複通知
-//         badge: '/FirebasePWA-Test/icon-192x192.png',
-//         icon: '/FirebasePWA-Test/icon-192x192.png',
-//         requireInteraction: true  // 確保通知不會自動消失
-//     };
+    const notificationTitle = payload.data.title;
+    const notificationOptions = {
+        body: payload.data.body,
+        data: {
+            url: payload.data.url
+        },
+        tag: 'push-notification',  // 使用固定 tag 避免重複
+        renotify: false,  // 避免重複通知
+        badge: '/FirebasePWA-Test/icon-192x192.png',
+        icon: '/FirebasePWA-Test/icon-192x192.png',
+        requireInteraction: true  // 確保通知不會自動消失
+    };
 
-//     // 先清除所有現有通知
-//     self.registration.getNotifications().then(notifications => {
-//         notifications.forEach(notification => notification.close());
-//     });
+    // 先清除所有現有通知
+    self.registration.getNotifications().then(notifications => {
+        notifications.forEach(notification => notification.close());
+    });
 
-//     return self.registration.showNotification(notificationTitle, notificationOptions);
-// });
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
 
 // 處理通知點擊事件
 self.addEventListener('notificationclick', function(event) {
