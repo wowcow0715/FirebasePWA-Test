@@ -4,50 +4,60 @@
     <title>重定向中...</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
-    window.onload = function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        // 獲取URL參數
         const urlParams = new URLSearchParams(window.location.search);
         const targetUrl = urlParams.get('url');
+        
+        console.log('目標URL:', targetUrl);
         
         if (!targetUrl) {
             document.getElementById('error').style.display = 'block';
             return;
         }
         
-        // 顯示目標URL
-        document.getElementById('url-display').textContent = targetUrl;
-        document.getElementById('manual-link').href = targetUrl;
+        // 顯示目標URL到頁面上的所有元素
+        const urlDisplayElements = document.querySelectorAll('.url-display');
+        urlDisplayElements.forEach(el => {
+            el.textContent = targetUrl;
+        });
         
-        // 檢測是否為iOS PWA模式
+        // 設置所有手動連結
+        const manualLinkElements = document.querySelectorAll('.manual-link');
+        manualLinkElements.forEach(el => {
+            el.href = targetUrl;
+        });
+        
+        // 檢測環境
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                      (window.navigator.standalone === true);
         
+        console.log('環境檢測:', { isIOS, isPWA });
+        
+        // 根據環境決定顯示內容
         if (isIOS && isPWA) {
-            // iOS PWA模式：顯示手動開啟的指示
+            // iOS PWA模式下，顯示手動指南
             document.getElementById('ios-pwa-guide').style.display = 'block';
         } else {
-            // 其他環境：嘗試自動開啟
-            try {
-                // 嘗試幾種不同的方法
-                const opened = window.open(targetUrl, '_blank') || 
-                              window.open(targetUrl, '_system');
-                              
-                if (!opened) {
-                    // 如果自動開啟失敗，顯示手動開啟按鈕
+            // 嘗試自動開啟
+            setTimeout(function() {
+                try {
+                    console.log('嘗試開啟URL:', targetUrl);
+                    window.location.href = targetUrl;
+                } catch (e) {
+                    console.error('開啟URL失敗:', e);
                     document.getElementById('manual-open').style.display = 'block';
                 }
-            } catch (e) {
-                console.error('開啟網址失敗:', e);
-                document.getElementById('manual-open').style.display = 'block';
-            }
+            }, 1000);
         }
-    };
+    });
     </script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; }
         #error, #ios-pwa-guide, #manual-open { display: none; margin-top: 20px; }
         .button { display: inline-block; padding: 10px 20px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
-        #url-display { word-break: break-all; margin: 10px 0; font-size: 14px; color: #666; }
+        .url-display { word-break: break-all; margin: 10px 0; font-size: 14px; color: #666; }
         .steps { text-align: left; max-width: 400px; margin: 0 auto; }
         .steps li { margin-bottom: 10px; }
         .highlight { background: #ffff9e; padding: 2px 5px; }
@@ -68,14 +78,14 @@
                 <li>選擇 <span class="highlight">在 Safari 中開啟</span></li>
             </ol>
         </div>
-        <p id="url-display"></p>
-        <a id="manual-link" class="button">開啟目標網址</a>
+        <p class="url-display"></p>
+        <a class="manual-link button">開啟目標網址</a>
     </div>
     
     <div id="manual-open">
         <p>無法自動開啟外部連結，請點擊下方按鈕：</p>
-        <p id="url-display"></p>
-        <a id="manual-link" class="button" target="_blank">在新頁面開啟</a>
+        <p class="url-display"></p>
+        <a class="manual-link button" target="_blank">在新頁面開啟</a>
     </div>
 </body>
 </html>
