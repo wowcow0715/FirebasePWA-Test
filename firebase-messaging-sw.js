@@ -67,8 +67,14 @@ self.addEventListener('notificationclick', function(event) {
 
     event.notification.close();
     
-    // 開啟中繼頁面而非直接開啟目標URL
-    const redirectUrl = `/redirect.html?url=${encodeURIComponent(urlToOpen)}`;
+    // 動態獲取應用路徑 - 不寫死
+    const scope = self.registration.scope;
+    // 移除尾部斜線
+    const basePath = scope.endsWith('/') ? scope.slice(0, -1) : scope;
+    // 構建重定向URL
+    const redirectUrl = `${basePath}/redirect.html?url=${encodeURIComponent(urlToOpen)}`;
+    
+    console.log('重定向至:', redirectUrl);
     
     event.waitUntil(
         clients.openWindow(redirectUrl)
