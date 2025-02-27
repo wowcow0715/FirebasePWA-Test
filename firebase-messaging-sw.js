@@ -33,9 +33,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationOptions = {
         body: payload.notification.body,
         data: {
-            url: payload.fcmOptions?.link,
+            url: payload.data?.url,
         },
-        tag: 'push-notification',
         badge: '/FirebasePWA-Test/icon-192x192.png',
         icon: '/FirebasePWA-Test/icon-192x192.png'
     };
