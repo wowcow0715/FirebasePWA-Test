@@ -16,17 +16,11 @@
             return;
         }
         
-        // 顯示目標URL到頁面上的所有元素
-        const urlDisplayElements = document.querySelectorAll('.url-display');
-        urlDisplayElements.forEach(el => {
-            el.textContent = targetUrl;
-        });
-        
-        // 設置所有手動連結
-        const manualLinkElements = document.querySelectorAll('.manual-link');
-        manualLinkElements.forEach(el => {
-            el.href = targetUrl;
-        });
+        // 確保目標URL是HTTPS
+        let secureTargetUrl = targetUrl;
+        if (secureTargetUrl.startsWith('http:')) {
+            secureTargetUrl = secureTargetUrl.replace(/^http:\/\//, 'https://');
+        }
         
         // 檢測環境
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -35,57 +29,90 @@
         
         console.log('環境檢測:', { isIOS, isPWA });
         
-        // 根據環境決定顯示內容
+        // 顯示目標URL
+        document.getElementById('targetUrl').textContent = secureTargetUrl;
+        
         if (isIOS && isPWA) {
-            // iOS PWA模式下，顯示手動指南
+            // iOS PWA 模式
             document.getElementById('ios-pwa-guide').style.display = 'block';
-        } else {
+            
+            // 設置按鈕連結
+            const openButton = document.getElementById('openButton');
+            openButton.href = secureTargetUrl;
+            
             // 嘗試自動開啟
-            setTimeout(function() {
-                try {
-                    console.log('嘗試開啟URL:', targetUrl);
-                    window.location.href = targetUrl;
-                } catch (e) {
-                    console.error('開啟URL失敗:', e);
-                    document.getElementById('manual-open').style.display = 'block';
-                }
-            }, 1000);
+            try {
+                window.location.href = secureTargetUrl;
+            } catch (e) {
+                console.error('自動開啟失敗:', e);
+            }
+        } else {
+            // 其他環境：直接開啟
+            window.location.href = secureTargetUrl;
         }
     });
     </script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; }
-        #error, #ios-pwa-guide, #manual-open { display: none; margin-top: 20px; }
-        .button { display: inline-block; padding: 10px 20px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; margin: 10px 0; }
-        .url-display { word-break: break-all; margin: 10px 0; font-size: 14px; color: #666; }
-        .steps { text-align: left; max-width: 400px; margin: 0 auto; }
-        .steps li { margin-bottom: 10px; }
-        .highlight { background: #ffff9e; padding: 2px 5px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        #error, #ios-pwa-guide { 
+            display: none; 
+            margin-top: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .button { 
+            display: inline-block; 
+            padding: 12px 24px; 
+            background: #007aff; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        #targetUrl { 
+            word-break: break-all; 
+            margin: 15px 0; 
+            font-size: 14px; 
+            color: #666; 
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007aff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <h3>正在開啟外部連結...</h3>
+    <h2>正在開啟外部連結</h2>
+    <div class="loader"></div>
     
     <div id="error">
         <p>無法取得目標網址。</p>
+        <a href="javascript:history.back()" class="button">返回上一頁</a>
     </div>
     
     <div id="ios-pwa-guide">
-        <p>您正在使用 iOS PWA 模式，需要手動開啟外部連結：</p>
-        <div class="steps">
-            <ol>
-                <li>長按下方的連結</li>
-                <li>選擇 <span class="highlight">在 Safari 中開啟</span></li>
-            </ol>
-        </div>
-        <p class="url-display"></p>
-        <a class="manual-link button">開啟目標網址</a>
-    </div>
-    
-    <div id="manual-open">
-        <p>無法自動開啟外部連結，請點擊下方按鈕：</p>
-        <p class="url-display"></p>
-        <a class="manual-link button" target="_blank">在新頁面開啟</a>
+        <p>請點擊下方按鈕開啟連結：</p>
+        <p id="targetUrl"></p>
+        <a id="openButton" class="button" target="_blank">開啟連結</a>
     </div>
 </body>
 </html>

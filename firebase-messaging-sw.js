@@ -71,27 +71,11 @@ self.addEventListener('notificationclick', function(event) {
     const scope = self.registration.scope;
     const basePath = scope.endsWith('/') ? scope.slice(0, -1) : scope;
     
-    // 在 iOS 17+ 上使用 x-safari- 前綴
-    const redirectUrl = `x-safari-${urlToOpen}`;
-    
-    // 如果 x-safari- 方法失敗，則使用重定向頁面作為後備方案
-    const fallbackUrl = `${basePath}/redirect.html?url=${encodeURIComponent(urlToOpen)}`;
+    // 使用重定向頁面處理所有情況
+    const redirectUrl = `${basePath}/redirect.html?url=${encodeURIComponent(urlToOpen)}`;
     
     event.waitUntil(
-        (async () => {
-            try {
-                // 嘗試使用 x-safari- 方法
-                const result = await clients.openWindow(redirectUrl);
-                if (!result) {
-                    // 如果開啟失敗，使用後備方案
-                    return clients.openWindow(fallbackUrl);
-                }
-            } catch (error) {
-                console.error('x-safari- 方法失敗:', error);
-                // 使用後備方案
-                return clients.openWindow(fallbackUrl);
-            }
-        })()
+        clients.openWindow(redirectUrl)
     );
 });
 
