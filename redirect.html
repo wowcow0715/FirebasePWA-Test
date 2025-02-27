@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>重定向中...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUrl = urlParams.get('url');
+        
+        if (targetUrl) {
+            // 嘗試使用系統瀏覽器開啟
+            const opened = window.open(targetUrl, '_system');
+            
+            // 如果失敗，顯示手動開啟選項
+            if (!opened) {
+                document.getElementById('manual-link').href = targetUrl;
+                document.getElementById('manual-open').style.display = 'block';
+                document.getElementById('url-display').textContent = targetUrl;
+            } else {
+                // 成功開啟後關閉此頁面
+                window.close();
+            }
+        }
+    };
+    </script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #manual-open { display: none; margin-top: 20px; }
+        .button { display: inline-block; padding: 10px 20px; background: #4285f4; color: white; text-decoration: none; border-radius: 4px; }
+        #url-display { word-break: break-all; margin: 10px 0; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+    <h3>正在開啟外部連結...</h3>
+    <div id="manual-open">
+        <p>無法自動開啟外部瀏覽器，請點擊下方連結：</p>
+        <p id="url-display"></p>
+        <a id="manual-link" class="button" target="_blank">在新頁面開啟</a>
+    </div>
+</body>
+</html>

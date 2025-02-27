@@ -9,7 +9,8 @@ const FILES_TO_CACHE = [
     '/FirebasePWA-Test/index.html',
     '/FirebasePWA-Test/manifest.json',
     '/FirebasePWA-Test/icon-192x192.png',
-    '/FirebasePWA-Test/icon-512x512.png'
+    '/FirebasePWA-Test/icon-512x512.png',
+    '/FirebasePWA-Test/redirect.html'
 ];
 
 // 初始化 Firebase
@@ -66,37 +67,13 @@ self.addEventListener('notificationclick', function(event) {
 
     event.notification.close();
     
-    // 強制在新視窗開啟
+    // 開啟中繼頁面而非直接開啟目標URL
+    const redirectUrl = `/redirect.html?url=${encodeURIComponent(urlToOpen)}`;
+    
     event.waitUntil(
-        (async () => {
-            try {
-                // 先檢查是否為 PWA 環境
-                const isPWA = self.navigator.standalone || 
-                            window.matchMedia('(display-mode: standalone)').matches;
-
-                if (isPWA) {
-                    // PWA 環境：強制使用系統瀏覽器開啟
-                    const newWindow = window.open(urlToOpen, '_system');
-                    if (!newWindow) {
-                        // 如果開啟失敗，使用 location.href
-                        window.location.href = urlToOpen;
-                    }
-                } else {
-                    // 非 PWA 環境：使用 clients.openWindow
-                    const windowClient = await clients.openWindow(urlToOpen);
-                    if (windowClient) {
-                        windowClient.focus();
-                    }
-                }
-            } catch (error) {
-                console.error('開啟視窗失敗:', error);
-                // 最後的備用方案
-                window.open(urlToOpen, '_blank');
-            }
-        })()
+        clients.openWindow(redirectUrl)
     );
 });
-
 
 // PWA 快取功能
 self.addEventListener('fetch', (event) => {
