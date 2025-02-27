@@ -73,5 +73,14 @@ self.addEventListener('install', (event) => {
 
 // 處理 PWA 激活事件
 self.addEventListener('activate', (event) => {
-    event.waitUntil(clients.claim());  // 立即接管所有頁面
-}); 
+    event.waitUntil(
+        caches.keys().then((keyList) => {
+            return Promise.all(keyList.map((key) => {
+                if (key !== CACHE_NAME) {
+                    return caches.delete(key); // 清理舊快取
+                }
+            }));
+        })
+    );
+    return self.clients.claim(); // 立即接管所有頁面
+});
