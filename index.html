@@ -89,19 +89,12 @@
                     serviceWorkerRegistration: swRegistration
                 });
                 
-                console.log('FCM Token 取得成功:', {
-                    token: token,
-                    tokenLength: token.length,
-                    timestamp: new Date().toISOString()
-                });
-                
+                console.log('FCM Token:', token);
                 document.getElementById('token').textContent = token;
 
             } catch (error) {
                 console.error('Token 取得失敗:', error);
                 document.getElementById('token').textContent = '取得 Token 失敗: ' + error.message;
-
-
             }
         }
 

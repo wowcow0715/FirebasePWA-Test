@@ -29,12 +29,21 @@ const messaging = firebase.messaging();
 // 處理背景訊息
 messaging.onBackgroundMessage((payload) => {
     console.log('收到背景訊息:', payload);
+    
+    // 只處理含有 url 的推播
+    if (!payload.data?.url) {
+        console.log('忽略沒有 URL 的推播');
+        return;
+    }
+
     const notificationTitle = payload.notification.title;
     const notificationOptions = {
         body: payload.notification.body,
         data: {
-            url: payload.data?.url,
+            url: payload.data.url  // 使用 data 中的 url
         },
+        tag: 'push-notification-' + Date.now(),  // 使用時間戳確保唯一性
+        renotify: false,  // 避免重複通知
         badge: '/FirebasePWA-Test/icon-192x192.png',
         icon: '/FirebasePWA-Test/icon-192x192.png'
     };
@@ -46,13 +55,45 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', function(event) {
     console.log('收到通知點擊事件:', event);
     
-    // 從通知數據中取得 URL 
     const urlToOpen = event.notification.data?.url;
-    if (urlToOpen) {
-        event.notification.close();
-        event.waitUntil(clients.openWindow(urlToOpen));
-        
-    }
+    if (!urlToOpen) return;
+
+    event.notification.close();
+    
+    // 檢查是否有開啟的視窗
+    event.waitUntil(
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        })
+        .then(function(clientList) {
+            // 檢查是否為 iOS PWA
+            const isIOSPWA = self.navigator?.standalone || 
+                            clientList.some(client => 
+                                client.url.includes('apple-mobile-web-app'));
+            
+            if (isIOSPWA) {
+                // iOS PWA 模式：強制開新視窗
+                return clients.openWindow(urlToOpen).then(windowClient => {
+                    // 確保新視窗成功開啟
+                    if (!windowClient) {
+                        // 如果開啟失敗，嘗試使用備用方法
+                        const newWindow = new WindowClient(urlToOpen);
+                        return newWindow;
+                    }
+                    return windowClient;
+                });
+            } else {
+                // 其他情況：也是開新視窗
+                return clients.openWindow(urlToOpen);
+            }
+        })
+        .catch(error => {
+            console.error('開啟視窗失敗:', error);
+            // 發生錯誤時的備用方案
+            return clients.openWindow(urlToOpen);
+        })
+    );
 });
 
 
